@@ -240,7 +240,7 @@ if __name__ =="__main__":
 	
 	train_X=Normalization(raw_X)
 	#print(train_X)
-	w0, b0, w1, b1=bp_train(train_X,train_Y,6,2,1000,0.1)
+	w0, b0, w1, b1=bp_train(train_X,train_Y,5,2,1000,0.1)
 	
 	test_Y = get_predict(train_X, w0, b0, w1, b1)
 	test_Y = argmax(test_Y,axis=1)
