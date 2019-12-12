@@ -16,8 +16,6 @@ def generate_training_data(n):
 		f.write(str(round(x2, 6)))
 		f.write('\t')
 		f.write('1')
-		f.write('\t')
-		f.write('0')
 		f.write('\n')
 	for i in range(int(n/2)):
 		x1=random.uniform(-10,10)
@@ -29,8 +27,6 @@ def generate_training_data(n):
 		f.write(str(round(x2, 6)))
 		f.write('\t')
 		f.write('0')
-		f.write('\t')
-		f.write('1')
 		f.write('\n')
 	return mat(data)
 
@@ -50,8 +46,6 @@ def generate_square_data(n):
 			f.write(str(round(x2, 6)))
 			f.write('\t')
 			f.write('1')
-			f.write('\t')
-			f.write('0')
 			f.write('\n')
 		else:
 			data.append([x1,x2,0,1])
@@ -60,8 +54,6 @@ def generate_square_data(n):
 			f.write(str(round(x2, 6)))
 			f.write('\t')
 			f.write('0')
-			f.write('\t')
-			f.write('1')
 			f.write('\n')
 	return mat(data)
 

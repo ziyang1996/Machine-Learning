@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 '''
 #-----------------------------------------训练部分-------------------------------------------------------
 
-def bp_train(feature,label,n_hidden,n_output,maxCycle,alpha):
+def bp_train(feature,label,n_hidden,n_output,maxCycle=1000,delta=0.01,learnRate=0.1):
 	''' 训练模型
 		input: 	feature(mat): 特征值 
 				label(mat): 标签值
@@ -39,9 +39,11 @@ def bp_train(feature,label,n_hidden,n_output,maxCycle,alpha):
 	b1 = mat(random.rand(1,n_output))
 	b1 = b1 * (8.0*sqrt(6)/sqrt(n_hidden+n_output)) - mat(ones((1,n_output))) * (4.0*sqrt(6)/sqrt(n_hidden+n_output))
 	
-	
+	# 设置递减的学习率
+	#alpha=1.0/learnRate
+
 	# 2 训练
-	for i in range(maxCycle):
+	for i in range(0,maxCycle+1):
 		# 2.1 正向传播
 		# 2.1.1 计算隐含层的输入
 		hidden_input = hidden_in(feature, w0, b0)
@@ -59,14 +61,18 @@ def bp_train(feature,label,n_hidden,n_output,maxCycle,alpha):
 		delta_hidden = multiply( (delta_output * w1.T), partial_sig(hidden_input))
 
 		# 2.3 修正权重和偏置
-		w1 = w1 - alpha * (hidden_output.T * delta_output)
-		b1 = b1 - alpha * sum(delta_output, axis=0) * (1.0/m)
-		w0 = w0 - alpha * (feature.T * delta_hidden)
-		b0 = b0 - alpha * sum(delta_hidden, axis=0) * (1.0/m)
+		w1 = w1 - learnRate * (hidden_output.T * delta_output)
+		b1 = b1 - learnRate * sum(delta_output, axis=0) * (1.0/m)
+		w0 = w0 - learnRate * (feature.T * delta_hidden)
+		b0 = b0 - learnRate * sum(delta_hidden, axis=0) * (1.0/m)
 
 		if i % 100 == 0:
 			cost=0.5*get_cost(get_predict(feature, w0, b0, w1, b1) - label)
 			print('---',i,': cost = ',cost)
+			# 学习率随cost下降
+			learnRate=cost/5 
+			if cost < delta:
+				break
 
 	return w0,b0,w1,b1
 
@@ -157,7 +163,7 @@ def generate_data():
 		data[i,1] = x[i,1] * 9 - 4.5
 	return data
 
-#-------------------------------------------------加载训练样本----------------------------------------------------
+#---------------------------------------------加载处理训练样本----------------------------------------------------
 
 def load_data(file_name):  
 	#load training data from file and generate feature matrix X and feature matrix Y
@@ -168,18 +174,28 @@ def load_data(file_name):
 		_X=[]
 		_Y=[]
 		ls=l.strip().split('\t')
-		for i in range(len(ls)-2):
+		for i in range(len(ls)-1):
 			_X.append(float(ls[i]))
-		if int(ls[-1]) ==1:
-			_Y.append(0)
-			_Y.append(1)
-		else:
-			_Y.append(1)
-			_Y.append(0)
+		_Y.append(int(ls[-1]))
 		X.append(_X)
 		Y.append(_Y)
 	f.close()
 	return mat(X), mat(Y)
+
+def transformLabel(Y):
+	m = Y.shape[0]
+	M = {}
+	k = 0
+	for i in range(m):
+		if int(Y[i,0]) not in M:
+			M[int(Y[i,0])]=k	
+			k+=1
+	n = len(M)
+	_Y=[[0]*n]*m
+	_Y=mat(_Y)
+	for i in range(m):
+		_Y[i, M[int(Y[i,0])]]=1
+	return _Y
 
 #-------------------------------------------------生成预测图像----------------------------------------------------
 
@@ -232,34 +248,21 @@ def Normalization(X):
 if __name__ =="__main__":
 	
 	f='train.txt'
-	raw_X,train_Y=load_data(f)
-	print(train_Y)
-	
-	#print(raw_X)
-	#print(train_Y)
+	raw_X,raw_Y=load_data(f)
 	
 	train_X=Normalization(raw_X)
-	#print(train_X)
-	w0, b0, w1, b1=bp_train(train_X,train_Y,5,2,1000,0.1)
+	train_Y=transformLabel(raw_Y)
+
+	w0, b0, w1, b1=bp_train(train_X,train_Y,10,2)
 	
 	test_Y = get_predict(train_X, w0, b0, w1, b1)
 	test_Y = argmax(test_Y,axis=1)
 	
-	''' 注意 此处error rate为正确率
-		因为获得的test_Y为分类序号:[0]or[1]，而train_Y为标签所属序列[0,1]或[1,0]
-		多分类问题中计算误差的函数需要进一步修改
-	'''
+	# 注意 此处error rate为正确率
+	#	因为获得的test_Y为分类序号:[0]or[1]，而train_Y为标签所属序列[0,1]或[1,0]
+	#	多分类问题中计算误差的函数需要进一步修改
+	
 	err=err_rate(train_Y,test_Y)
-	print('error rate = ',err)
+	print('accuracy = ',err)
 	show_plot(raw_X,test_Y)
 	
-
-''' 测试结果： 
-	神经元个数 	2：cost = 0.04515
-				3: cost = 0.03609
-				4: cost = 0.02342
-				5：cost = 0.01985 
-				6：cost = 0.01962 (最佳)
-				7: cost = 0.01963
-				8: cost = 0.02013
-'''
